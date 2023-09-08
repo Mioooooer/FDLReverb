@@ -442,27 +442,27 @@ namespace DSP
 
         void initIRAfterFFTAndInputDelayLine(std::vector<float> waveTable)
         {
-            double* tempIn = new double[shift];
+            double* tempIn = new double[frame];
             double* tempOut = new double[frame + 2];
-            int restNum = waveTable.size() % shift;
+            int restNum = waveTable.size() % frame;
             if (restNum != 0)
             {
-                for (int i = 0; i < (shift - restNum); i++)
+                for (int i = 0; i < (frame - restNum); i++)
                 {
                     waveTable.emplace_back(0.0);
                 }
             }
             
-            int numShift = waveTable.size() / shift;
+            int numShift = waveTable.size() / frame;
             IRAfterFFT.resize(numShift);
             InputDelayLine.resize(numShift);
             for (int i = 0; i < numShift; i++)
             {
-                for (int j = 0; j < shift; j++)
+                for (int j = 0; j < frame; j++)
                 {
-                    tempIn[j] = waveTable[i*shift+j];
+                    tempIn[j] = waveTable[i*frame+j];
                 }
-                mySTFT.stft(tempIn, tempOut);
+                tableSTFT.stft(tempIn, tempOut);
                 for(int k = 0; k < (frame+2); k++)
                 {
                     IRAfterFFT[i].emplace_back(tempOut[k]);
@@ -486,9 +486,10 @@ namespace DSP
         const int ch = 1;
         //const int frame = 512;
         //const int shift = 128;
-        const int frame = 2048;
-        const int shift = 512;
+        const int frame = 1024;
+        const int shift = 256;
         STFT mySTFT = STFT(ch,frame,shift);
+        STFT tableSTFT = STFT(ch,frame,frame);
         std::vector<std::vector<double> > IRAfterFFT;
         std::vector<std::vector<double> > InputDelayLine;
 
