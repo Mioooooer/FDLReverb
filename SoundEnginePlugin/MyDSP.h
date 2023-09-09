@@ -443,24 +443,28 @@ namespace DSP
         void initIRAfterFFTAndInputDelayLine(std::vector<float> waveTable)
         {
             double* tempIn = new double[frame];
+            for (int m = 0; m < frame; m++)
+            {
+                tempIn[m] = 0.0;
+            }
             double* tempOut = new double[frame + 2];
-            int restNum = waveTable.size() % frame;
+            int restNum = waveTable.size() % shift;
             if (restNum != 0)
             {
-                for (int i = 0; i < (frame - restNum); i++)
+                for (int i = 0; i < (shift - restNum); i++)
                 {
                     waveTable.emplace_back(0.0);
                 }
             }
             
-            int numShift = waveTable.size() / frame;
+            int numShift = waveTable.size() / shift;
             IRAfterFFT.resize(numShift);
             InputDelayLine.resize(numShift);
             for (int i = 0; i < numShift; i++)
             {
-                for (int j = 0; j < frame; j++)
+                for (int j = 0; j < shift; j++)
                 {
-                    tempIn[j] = waveTable[i*frame+j];
+                    tempIn[j] = waveTable[i*shift+j];
                 }
                 tableSTFT.stft(tempIn, tempOut);
                 for(int k = 0; k < (frame+2); k++)
