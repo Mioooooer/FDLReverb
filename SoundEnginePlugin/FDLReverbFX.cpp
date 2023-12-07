@@ -76,7 +76,12 @@ AKRESULT FDLReverbFX::Init(AK::IAkPluginMemAlloc* in_pAllocator, AK::IAkEffectPl
     }
     for(int i = 0; i < numChannels; i++)
     {
-        reverbVector[i].initIRAfterFFTAndInputDelayLine(myWaveTable.tableIR[IRTableIndex]);
+        int IRChannelIndex = i;
+        if(IRChannelIndex >= myWaveTable.tableIR[IRTableIndex].size())
+        {
+            IRChannelIndex = myWaveTable.tableIR[IRTableIndex].size() - 1;
+        }
+        reverbVector[i].initIRAfterFFTAndInputDelayLine(myWaveTable.tableIR[IRTableIndex][IRChannelIndex]);
         filterVector[i].resize(4);
         filterVector[i][0].setCoefficientsByEnum(static_cast<DSP::FilterType>(m_pParams->RTPC.nFilter1Curve), nSampleRate, m_pParams->RTPC.fFilter1Freq, m_pParams->RTPC.fFilter1Q, m_pParams->RTPC.fFilter1Gain);
         filterVector[i][0].bypass = m_pParams->RTPC.nFilter1InsertPos == 0;
