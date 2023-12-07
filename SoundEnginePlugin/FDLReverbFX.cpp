@@ -121,7 +121,7 @@ void FDLReverbFX::Execute(AkAudioBuffer* io_pBuffer)
 {
     const AkUInt32 uNumChannels = io_pBuffer->NumChannels();
 
-    m_FXTailHandler.HandleTail( io_pBuffer, 96000 );
+    m_FXTailHandler.HandleTail( io_pBuffer, 72558 );
 
     for (AkUInt32 channel = 0; channel < uNumChannels; ++channel)
     {
