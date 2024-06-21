@@ -12,9 +12,6 @@
 #include <array>
 #include <vector>
 #include <cmath>
-#include <memory>
-#include <numbers>
-#include <utility>
 #include "STFT/STFT.h"
 
 #ifndef M_PI

@@ -29,6 +29,9 @@ the specific language governing permissions and limitations under the License.
 
 #include <AK/SoundEngine/Common/IAkPlugin.h>
 #include <AK/Plugin/PluginServices/AkFXParameterChangeHandler.h>
+#include <string>
+
+using namespace std;
 
 // Add parameters IDs here, those IDs should map to the AudioEnginePropertyID
 // attributes in the xml property definition.
@@ -59,7 +62,10 @@ static const AkPluginParamID PARAM_Filter4Curve_ID = 19;
 static const AkPluginParamID PARAM_Filter4Gain_ID = 20;
 static const AkPluginParamID PARAM_Filter4Freq_ID = 21;
 static const AkPluginParamID PARAM_Filter4Q_ID = 22;
-static const AkUInt32 NUM_PARAMS = 23;
+
+static const AkPluginParamID PARAM_IRType_ID = 23;
+
+static const AkUInt32 NUM_PARAMS = 24;
 
 struct FDLReverbRTPCParams
 {
@@ -94,6 +100,9 @@ struct FDLReverbRTPCParams
 
 struct FDLReverbNonRTPCParams
 {
+    AkReal32 szIRType;
+    bool bHasSetMedia;
+    bool bHasSetFilter;
 };
 
 struct FDLReverbFXParams

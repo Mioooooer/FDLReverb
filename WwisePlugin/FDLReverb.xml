@@ -36,6 +36,7 @@ for the documentation about the plugin xml format
           <CanBeInsertOnBusses>true</CanBeInsertOnBusses>
           <CanBeInsertOnAudioObjects>true</CanBeInsertOnAudioObjects>
           <CanBeRendered>true</CanBeRendered>
+		      <CanReferenceDataFile>true</CanReferenceDataFile>
         </Platform>
       </PlatformSupport>
     </PluginInfo>
@@ -709,6 +710,10 @@ for the documentation about the plugin xml format
         </Dependencies>
       </Property>
       <!-- Eq end -->
+      <Property Name="IRType" Type="string" DisplayName="IRType">
+        <DefaultValue>Default</DefaultValue>
+        <AudioEnginePropertyID>23</AudioEnginePropertyID>
+      </Property>
     </Properties>
   </EffectPlugin>
 </PluginModule>

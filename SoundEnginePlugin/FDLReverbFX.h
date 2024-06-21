@@ -27,11 +27,18 @@ the specific language governing permissions and limitations under the License.
 #ifndef FDLReverbFX_H
 #define FDLReverbFX_H
 
+#define DR_WAV_IMPLEMENTATION
+#include "dr_wav.h"
+
 #include <AK/Plugin/PluginServices/AkFXTailHandler.h>
 #include "FDLReverbFXParams.h"
 #include "MyDSP.h"
 #include "WaveTable.h"
 #include <vector>
+#include <AK/AkWwiseSDKVersion.h>
+#include <string>
+#include <sstream>
+#include <AK/Tools/Common/AkAllocator.h>
 
 /// See https://www.audiokinetic.com/library/edge/?source=SDK&id=soundengine__plugins__effects.html
 /// for the documentation about effect plug-ins
@@ -78,6 +85,7 @@ private:
     std::vector<DSP::MyUtils> reverbVector;
     std::vector<std::vector<DSP::IIRFilter> > filterVector;
     int nSampleRate;
+    bool irByPass = true;
 
 };
 

@@ -27,7 +27,6 @@ the specific language governing permissions and limitations under the License.
 #include "FDLReverbFX.h"
 #include "../FDLReverbConfig.h"
 
-#include <AK/AkWwiseSDKVersion.h>
 
 AK::IAkPlugin* CreateFDLReverbFX(AK::IAkPluginMemAlloc* in_pAllocator)
 {
@@ -60,6 +59,56 @@ AKRESULT FDLReverbFX::Init(AK::IAkPluginMemAlloc* in_pAllocator, AK::IAkEffectPl
 
     const auto numChannels = in_rFormat.GetNumChannels();
     nSampleRate = in_rFormat.uSampleRate;
+
+    AkUInt8* pPluginData = NULL;
+    AkUInt32 uPluginDataSize;
+    in_pContext->GetPluginMedia(0, pPluginData, uPluginDataSize);
+    //if (pPluginData == NULL)
+    //    return AK_Fail; // û�г弤��Ӧ��ʱ������ʵ���������
+
+    if(pPluginData == NULL)
+    {
+        irByPass = true; // 没有冲激响应的时候bypass混响部分，为了在wwise创作工具内使用时的方便，此处不返回AK_Fail
+        return AK_Success;
+    }
+    else
+    {
+        unsigned int drChannels;
+        unsigned int drSampleRate;
+        drwav_uint64 totalPCMFrameCount;
+        float* pSampleData = drwav_open_memory_and_read_pcm_frames_f32(pPluginData,
+            uPluginDataSize,
+            &drChannels,
+            &drSampleRate,
+            &totalPCMFrameCount,
+            NULL);
+        if (pSampleData == NULL)
+        {
+            // Error opening and reading wav file.
+            irByPass = true;
+        }
+        else 
+        {
+            irByPass = false;
+            // ׼�������� WaveTable::AllWaveTable �е�����
+            std::vector<std::vector<std::vector<float>>> impulseResponseData(1);
+            int minChannel = (drChannels > numChannels) ? numChannels : drChannels;
+            impulseResponseData[0].resize(minChannel);
+            for (unsigned int channel = 0; channel < minChannel; ++channel)
+            {
+                impulseResponseData[0][channel].resize(totalPCMFrameCount);
+                for (drwav_uint64 frame = 0; frame < totalPCMFrameCount; ++frame)
+                {
+                    impulseResponseData[0][channel][frame] = pSampleData[frame * drChannels + channel];
+                }
+            }
+
+            myWaveTable.setImpulseResponseData(impulseResponseData);
+
+            // ��� drwav ��Ҫ���������ͷŲ�������
+            drwav_free(pSampleData, NULL);
+        }
+    }
 
     toProcess.resize(numChannels);
     toPass.resize(numChannels);
@@ -119,9 +168,24 @@ AKRESULT FDLReverbFX::GetPluginInfo(AkPluginInfo& out_rPluginInfo)
 
 void FDLReverbFX::Execute(AkAudioBuffer* io_pBuffer)
 {
+    if(irByPass == true)
+    {
+        return;
+    }
+
     const AkUInt32 uNumChannels = io_pBuffer->NumChannels();
 
-    m_FXTailHandler.HandleTail( io_pBuffer, 72558 );
+    int IRTableIndex = (int)round(m_pParams->RTPC.fIRTable);
+    if(IRTableIndex >= myWaveTable.tableIR.size())
+    {
+        IRTableIndex = myWaveTable.tableIR.size()-1;
+    }
+    else if(IRTableIndex < 0)
+    {
+        IRTableIndex = 0;
+    }
+    AkUInt32 tailSize = myWaveTable.tableIR[IRTableIndex][0].size();
+    m_FXTailHandler.HandleTail( io_pBuffer, tailSize );
 
     for (AkUInt32 channel = 0; channel < uNumChannels; ++channel)
     {
@@ -188,14 +252,18 @@ void FDLReverbFX::Execute(AkAudioBuffer* io_pBuffer)
 
         
         //-----------------update filter setting---------------------
-        filterVector[channel][0].setCoefficientsByEnum(static_cast<DSP::FilterType>(m_pParams->RTPC.nFilter1Curve), nSampleRate, m_pParams->RTPC.fFilter1Freq, m_pParams->RTPC.fFilter1Q, m_pParams->RTPC.fFilter1Gain);
-        filterVector[channel][0].bypass = m_pParams->RTPC.nFilter1InsertPos == 0;
-        filterVector[channel][1].setCoefficientsByEnum(static_cast<DSP::FilterType>(m_pParams->RTPC.nFilter2Curve), nSampleRate, m_pParams->RTPC.fFilter2Freq, m_pParams->RTPC.fFilter2Q, m_pParams->RTPC.fFilter2Gain);
-        filterVector[channel][1].bypass = m_pParams->RTPC.nFilter2InsertPos == 0;
-        filterVector[channel][2].setCoefficientsByEnum(static_cast<DSP::FilterType>(m_pParams->RTPC.nFilter3Curve), nSampleRate, m_pParams->RTPC.fFilter3Freq, m_pParams->RTPC.fFilter3Q, m_pParams->RTPC.fFilter3Gain);
-        filterVector[channel][2].bypass = m_pParams->RTPC.nFilter3InsertPos == 0;
-        filterVector[channel][3].setCoefficientsByEnum(static_cast<DSP::FilterType>(m_pParams->RTPC.nFilter4Curve), nSampleRate, m_pParams->RTPC.fFilter4Freq, m_pParams->RTPC.fFilter4Q, m_pParams->RTPC.fFilter4Gain);
-        filterVector[channel][3].bypass = m_pParams->RTPC.nFilter4InsertPos == 0;
+        if(m_pParams->NonRTPC.bHasSetFilter)
+        {
+            filterVector[channel][0].setCoefficientsByEnum(static_cast<DSP::FilterType>(m_pParams->RTPC.nFilter1Curve), nSampleRate, m_pParams->RTPC.fFilter1Freq, m_pParams->RTPC.fFilter1Q, m_pParams->RTPC.fFilter1Gain);
+            filterVector[channel][0].bypass = m_pParams->RTPC.nFilter1InsertPos == 0;
+            filterVector[channel][1].setCoefficientsByEnum(static_cast<DSP::FilterType>(m_pParams->RTPC.nFilter2Curve), nSampleRate, m_pParams->RTPC.fFilter2Freq, m_pParams->RTPC.fFilter2Q, m_pParams->RTPC.fFilter2Gain);
+            filterVector[channel][1].bypass = m_pParams->RTPC.nFilter2InsertPos == 0;
+            filterVector[channel][2].setCoefficientsByEnum(static_cast<DSP::FilterType>(m_pParams->RTPC.nFilter3Curve), nSampleRate, m_pParams->RTPC.fFilter3Freq, m_pParams->RTPC.fFilter3Q, m_pParams->RTPC.fFilter3Gain);
+            filterVector[channel][2].bypass = m_pParams->RTPC.nFilter3InsertPos == 0;
+            filterVector[channel][3].setCoefficientsByEnum(static_cast<DSP::FilterType>(m_pParams->RTPC.nFilter4Curve), nSampleRate, m_pParams->RTPC.fFilter4Freq, m_pParams->RTPC.fFilter4Q, m_pParams->RTPC.fFilter4Gain);
+            filterVector[channel][3].bypass = m_pParams->RTPC.nFilter4InsertPos == 0;
+            m_pParams->NonRTPC.bHasSetFilter = false;
+        }
         //-----------------update filter setting---------------------
         //------eq here-----------------
         if (m_pParams->RTPC.bEnableEqControls == true)
@@ -213,10 +281,77 @@ void FDLReverbFX::Execute(AkAudioBuffer* io_pBuffer)
         {
             auto mix = m_pParams->RTPC.fMix;
             pBuf[i] = output_signal[i] * mix + pBuf[i] * (1 - mix);
-
         }
         //-----------------------------
 
+    }
+
+
+    if (m_pParams->NonRTPC.bHasSetMedia == true)
+    {
+        AkUInt8* pPluginData = NULL;
+        AkUInt32 uPluginDataSize;
+        m_pContext->GetPluginMedia(0, pPluginData, uPluginDataSize);
+        //if (pPluginData == NULL)
+        //    return AK_Fail; // û�г弤��Ӧ��ʱ������ʵ���������
+        if (pPluginData != NULL)
+        {
+            unsigned int drChannels;
+            unsigned int drSampleRate;
+            drwav_uint64 totalPCMFrameCount;
+            float* pSampleData = drwav_open_memory_and_read_pcm_frames_f32(
+                pPluginData,
+                uPluginDataSize,
+                &drChannels,
+                &drSampleRate,
+                &totalPCMFrameCount,
+                NULL);
+
+            if(pSampleData != NULL) 
+            {
+                // ׼�������� WaveTable::AllWaveTable �е�����
+                std::vector<std::vector<std::vector<float>>> impulseResponseData(1);
+                int minChannel = (drChannels > uNumChannels) ? uNumChannels : drChannels;
+                impulseResponseData[0].resize(minChannel);
+                for (unsigned int channel = 0; channel < minChannel; ++channel)
+                {
+                    impulseResponseData[0][channel].resize(totalPCMFrameCount);
+                    for (drwav_uint64 frame = 0; frame < totalPCMFrameCount; ++frame)
+                    {
+                        impulseResponseData[0][channel][frame] = pSampleData[frame * drChannels + channel];
+                    }
+                }
+
+                myWaveTable.setImpulseResponseData(impulseResponseData);
+
+                // ��� drwav ��Ҫ���������ͷŲ�������
+                drwav_free(pSampleData, NULL);
+            }
+        }
+
+        //toProcess.resize(uNumChannels);
+        //toPass.resize(uNumChannels);
+        reverbVector.resize(uNumChannels);
+        int IRTableIndex = (int)round(m_pParams->RTPC.fIRTable);
+        if(IRTableIndex >= myWaveTable.tableIR.size())
+        {
+            IRTableIndex = myWaveTable.tableIR.size()-1;
+        }
+        else if(IRTableIndex < 0)
+        {
+            IRTableIndex = 0;
+        }
+        for(int i = 0; i < uNumChannels; i++)
+        {
+            int IRChannelIndex = i;
+            if(IRChannelIndex >= myWaveTable.tableIR[IRTableIndex].size())
+            {
+                IRChannelIndex = myWaveTable.tableIR[IRTableIndex].size() - 1;
+            }
+            reverbVector[i].initIRAfterFFTAndInputDelayLine(myWaveTable.tableIR[IRTableIndex][IRChannelIndex]);
+        }
+
+        m_pParams->NonRTPC.bHasSetMedia = false;
     }
 }
 

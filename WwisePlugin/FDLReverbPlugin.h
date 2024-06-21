@@ -27,11 +27,20 @@ the specific language governing permissions and limitations under the License.
 #pragma once
 
 #include <AK/Wwise/Plugin.h>
+#include <string>
+#include <AK/Wwise/Plugin/PluginDef.h>
+
+using namespace std;
+using namespace AK::Wwise::Plugin;
 
 /// See https://www.audiokinetic.com/library/edge/?source=SDK&id=plugin__dll.html
 /// for the documentation about Authoring plug-ins
 class FDLReverbPlugin final
     : public AK::Wwise::Plugin::AudioPlugin
+    , public AK::Wwise::Plugin::MediaConverter
+    , public AK::Wwise::Plugin::RequestObjectMedia
+    , public AK::Wwise::Plugin::Notifications::ObjectMedia
+    , public AK::Wwise::Plugin::RequestHost
 {
 public:
     FDLReverbPlugin();
@@ -41,6 +50,28 @@ public:
     /// Because these can be changed at run-time, the parameter block should stay relatively small.
     // Larger data should be put in the Data Block.
     bool GetBankParameters(const GUID & in_guidPlatform, AK::Wwise::Plugin::DataWriter& in_dataWriter) const override;
+    void NotifyPropertyChanged(const GUID& in_guidPlatform, const char* in_szPropertyName) override;
+    ConversionResult ConvertFile(
+        const GUID& in_guidPlatform,
+        const BasePlatformID& in_basePlatform,
+        const AkOSChar* in_szSourceFile,
+        const AkOSChar* in_szDestFile,
+        AkUInt32 in_uSampleRate,
+        AkUInt32 in_uBlockLength,
+        IProgress* in_pProgress,
+        IWriteString* io_pError) const override;
+    uint32_t GetCurrentConversionSettingsHash(
+        const GUID& in_guidPlatform,
+        AkUInt32 in_uSampleRate,
+        AkUInt32 in_uBlockLength) const override;
+
+private:
+    string soundname = "Default";
+    string getsfxwaapi = "\"\\Actor - Mixer Hierarchy\\Default Work Unit\\IR_wavs\" select children where originalFilePath : \"" + soundname + "\"";
+    string getsfxwaapijs = "\\Actor - Mixer Hierarchy\\Default Work Unit\\IR_wavs select children where originalFilePath : \"" + soundname + "\"";
+    string originalFilePath;
+    wstring wOriginalFilePath;
 };
+
 
 DECLARE_AUDIOPLUGIN_CONTAINER(FDLReverb);	// Exposes our PluginContainer structure that contains the info for our plugin

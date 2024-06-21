@@ -27,6 +27,9 @@ the specific language governing permissions and limitations under the License.
 #include "FDLReverbFXParams.h"
 
 #include <AK/Tools/Common/AkBankReadHelpers.h>
+#include <string>
+
+using namespace std;
 
 FDLReverbFXParams::FDLReverbFXParams()
 {
@@ -81,6 +84,10 @@ AKRESULT FDLReverbFXParams::Init(AK::IAkPluginMemAlloc* in_pAllocator, const voi
         RTPC.fFilter4Freq = 5000.0;
         RTPC.fFilter4Q = 1.0;
 
+        NonRTPC.szIRType = 0.0;
+        NonRTPC.bHasSetMedia = false;
+        NonRTPC.bHasSetFilter = false;
+
         m_paramChangeHandler.SetAllParamChanges();
         return AK_Success;
     }
@@ -128,6 +135,8 @@ AKRESULT FDLReverbFXParams::SetParamsBlock(const void* in_pParamsBlock, AkUInt32
     RTPC.fFilter4Freq = READBANKDATA(AkReal32, pParamsBlock, in_ulBlockSize);
     RTPC.fFilter4Q = READBANKDATA(AkReal32, pParamsBlock, in_ulBlockSize);
 
+    NonRTPC.szIRType = READBANKDATA(AkReal32, pParamsBlock, in_ulBlockSize);
+
     CHECKBANKDATASIZE(in_ulBlockSize, eResult);
     m_paramChangeHandler.SetAllParamChanges();
 
@@ -161,18 +170,22 @@ AKRESULT FDLReverbFXParams::SetParam(AkPluginParamID in_paramID, const void* in_
     case PARAM_Filter1Curve_ID:
         RTPC.nFilter1Curve = *((AkInt32*)in_pValue);
         m_paramChangeHandler.SetParamChange(PARAM_Filter1Curve_ID);
+        NonRTPC.bHasSetFilter = true;
         break;
     case PARAM_Filter1Gain_ID:
         RTPC.fFilter1Gain = *((AkReal32*)in_pValue);
         m_paramChangeHandler.SetParamChange(PARAM_Filter1Gain_ID);
+        NonRTPC.bHasSetFilter = true;
         break;
     case PARAM_Filter1Freq_ID:
         RTPC.fFilter1Freq = *((AkReal32*)in_pValue);
         m_paramChangeHandler.SetParamChange(PARAM_Filter1Freq_ID);
+        NonRTPC.bHasSetFilter = true;
         break;
     case PARAM_Filter1Q_ID:
         RTPC.fFilter1Q = *((AkReal32*)in_pValue);
         m_paramChangeHandler.SetParamChange(PARAM_Filter1Q_ID);
+        NonRTPC.bHasSetFilter = true;
         break;
     
     case PARAM_Filter2InsertPos_ID:
@@ -182,18 +195,22 @@ AKRESULT FDLReverbFXParams::SetParam(AkPluginParamID in_paramID, const void* in_
     case PARAM_Filter2Curve_ID:
         RTPC.nFilter2Curve = *((AkInt32*)in_pValue);
         m_paramChangeHandler.SetParamChange(PARAM_Filter2Curve_ID);
+        NonRTPC.bHasSetFilter = true;
         break;
     case PARAM_Filter2Gain_ID:
         RTPC.fFilter2Gain = *((AkReal32*)in_pValue);
         m_paramChangeHandler.SetParamChange(PARAM_Filter2Gain_ID);
+        NonRTPC.bHasSetFilter = true;
         break;
     case PARAM_Filter2Freq_ID:
         RTPC.fFilter2Freq = *((AkReal32*)in_pValue);
         m_paramChangeHandler.SetParamChange(PARAM_Filter2Freq_ID);
+        NonRTPC.bHasSetFilter = true;
         break;
     case PARAM_Filter2Q_ID:
         RTPC.fFilter2Q = *((AkReal32*)in_pValue);
         m_paramChangeHandler.SetParamChange(PARAM_Filter2Q_ID);
+        NonRTPC.bHasSetFilter = true;
         break;
 
     case PARAM_Filter3InsertPos_ID:
@@ -203,18 +220,22 @@ AKRESULT FDLReverbFXParams::SetParam(AkPluginParamID in_paramID, const void* in_
     case PARAM_Filter3Curve_ID:
         RTPC.nFilter3Curve = *((AkInt32*)in_pValue);
         m_paramChangeHandler.SetParamChange(PARAM_Filter3Curve_ID);
+        NonRTPC.bHasSetFilter = true;
         break;
     case PARAM_Filter3Gain_ID:
         RTPC.fFilter3Gain = *((AkReal32*)in_pValue);
         m_paramChangeHandler.SetParamChange(PARAM_Filter3Gain_ID);
+        NonRTPC.bHasSetFilter = true;
         break;
     case PARAM_Filter3Freq_ID:
         RTPC.fFilter3Freq = *((AkReal32*)in_pValue);
         m_paramChangeHandler.SetParamChange(PARAM_Filter3Freq_ID);
+        NonRTPC.bHasSetFilter = true;
         break;
     case PARAM_Filter3Q_ID:
         RTPC.fFilter3Q = *((AkReal32*)in_pValue);
         m_paramChangeHandler.SetParamChange(PARAM_Filter3Q_ID);
+        NonRTPC.bHasSetFilter = true;
         break;
 
     case PARAM_Filter4InsertPos_ID:
@@ -224,21 +245,31 @@ AKRESULT FDLReverbFXParams::SetParam(AkPluginParamID in_paramID, const void* in_
     case PARAM_Filter4Curve_ID:
         RTPC.nFilter4Curve = *((AkInt32*)in_pValue);
         m_paramChangeHandler.SetParamChange(PARAM_Filter4Curve_ID);
+        NonRTPC.bHasSetFilter = true;
         break;
     case PARAM_Filter4Gain_ID:
         RTPC.fFilter4Gain = *((AkReal32*)in_pValue);
         m_paramChangeHandler.SetParamChange(PARAM_Filter4Gain_ID);
+        NonRTPC.bHasSetFilter = true;
         break;
     case PARAM_Filter4Freq_ID:
         RTPC.fFilter4Freq = *((AkReal32*)in_pValue);
         m_paramChangeHandler.SetParamChange(PARAM_Filter4Freq_ID);
+        NonRTPC.bHasSetFilter = true;
         break;
     case PARAM_Filter4Q_ID:
         RTPC.fFilter4Q = *((AkReal32*)in_pValue);
         m_paramChangeHandler.SetParamChange(PARAM_Filter4Q_ID);
+        NonRTPC.bHasSetFilter = true;
         break;
-
+    case PARAM_IRType_ID:
+        NonRTPC.szIRType = *((AkReal32*)in_pValue);
+        m_paramChangeHandler.SetParamChange(PARAM_IRType_ID);
+        NonRTPC.bHasSetMedia = true;
+        break;
+    
     default:
+
         eResult = AK_InvalidParameter;
         break;
     }
