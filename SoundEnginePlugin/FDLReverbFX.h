@@ -35,6 +35,7 @@ the specific language governing permissions and limitations under the License.
 #include "MyDSP.h"
 #include "WaveTable.h"
 #include <vector>
+#include <deque>
 #include <AK/AkWwiseSDKVersion.h>
 #include <string>
 #include <sstream>
@@ -80,8 +81,8 @@ private:
     AkFXTailHandler m_FXTailHandler;
     WaveTable::AllWaveTable myWaveTable;
     DSP::MyUtils myUtils;
-    std::vector<std::vector<double> > toProcess;
-    std::vector<std::vector<double> > toPass;
+    std::deque<std::deque<double> > toProcess;
+    std::deque<std::deque<double> > toPass;
     std::vector<DSP::MyUtils> reverbVector;
     std::vector<std::vector<DSP::IIRFilter> > filterVector;
     int nSampleRate;
