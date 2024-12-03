@@ -9,7 +9,7 @@
 */
 
 #pragma once
-#include <deque>
+#include <vector>
 
 
 namespace WaveTable
@@ -20,10 +20,10 @@ namespace WaveTable
     public:
         AllWaveTable() {}
 
-        void setImpulseResponseData(const std::deque<std::deque<std::deque<float>>>& data) {
+        void setImpulseResponseData(const std::vector<std::vector<std::vector<float>>>& data) {
             tableIR = data;
         }
-        std::deque<std::deque<std::deque<float> > > tableIR;
+        std::vector<std::vector<std::vector<float> > > tableIR;
        
 
     private:

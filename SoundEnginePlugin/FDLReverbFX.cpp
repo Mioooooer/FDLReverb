@@ -91,7 +91,7 @@ AKRESULT FDLReverbFX::Init(AK::IAkPluginMemAlloc* in_pAllocator, AK::IAkEffectPl
         {
             irByPass = false;
             // ׼�������� WaveTable::AllWaveTable �е�����
-            std::deque<std::deque<std::deque<float>>> impulseResponseData(1);
+            std::vector<std::vector<std::vector<float>>> impulseResponseData(1);
             int minChannel = (drChannels > numChannels) ? numChannels : drChannels;
             impulseResponseData[0].resize(minChannel);
             for (unsigned int channel = 0; channel < minChannel; ++channel)
@@ -195,12 +195,12 @@ void FDLReverbFX::Execute(AkAudioBuffer* io_pBuffer)
         auto numSamples = io_pBuffer->uValidFrames;
         int currentShiftNum = myUtils.getShiftSize();
 
-        // create input deque for stft
-        std::deque<double> inputVector;
-        std::deque<double> carrierVector;
+        // create input vector for stft
+        std::vector<double> inputVector;
+        std::vector<double> carrierVector;
 
         // output_signal would be equal to or larger than numSamples due to adding zero when applySTFT.
-        std::deque<double> output_signal;
+        std::vector<double> output_signal;
 
 
         //make compatible for any buffer size, by compare buffer size to shift num
@@ -310,7 +310,7 @@ void FDLReverbFX::Execute(AkAudioBuffer* io_pBuffer)
             if(pSampleData != NULL) 
             {
                 // ׼�������� WaveTable::AllWaveTable �е�����
-                std::deque<std::deque<std::deque<float>>> impulseResponseData(1);
+                std::vector<std::vector<std::vector<float>>> impulseResponseData(1);
                 int minChannel = (drChannels > uNumChannels) ? uNumChannels : drChannels;
                 impulseResponseData[0].resize(minChannel);
                 for (unsigned int channel = 0; channel < minChannel; ++channel)

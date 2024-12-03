@@ -10,7 +10,7 @@
 
 #pragma once
 #include <array>
-#include <deque>
+#include <vector>
 #include <cmath>
 #include "STFT/STFT.h"
 
@@ -241,7 +241,7 @@ namespace DSP
             state[1] = lv2;
         }
 
-        void process(std::deque<double>& src, std::deque<double>& dst, int numSamples)
+        void process(std::vector<double>& src, std::vector<double>& dst, int numSamples)
         {
             auto lv1 = state[0];
             auto lv2 = state[1];
@@ -289,7 +289,7 @@ namespace DSP
             return std::sqrt(sum / numSamples);
         }
 
-        float calculateRMS(std::deque<double>& data, int numSamples)
+        float calculateRMS(std::vector<double>& data, int numSamples)
         {
             if (numSamples <= 0)
             {
@@ -312,7 +312,7 @@ namespace DSP
             f = a*d + b*c;
         }
 
-        void applySTFT(std::deque<double>& bufferin, std::deque<double>& bufferout)
+        void applySTFT(std::vector<double>& bufferin, std::vector<double>& bufferout)
         {
             double* tempIn = new double[shift];
             double* tempOut = new double[frame + 2];
@@ -343,7 +343,7 @@ namespace DSP
             
         }
 
-        void applyISTFT(std::deque<double>& bufferin, std::deque<double>& bufferout)
+        void applyISTFT(std::vector<double>& bufferin, std::vector<double>& bufferout)
         {
             // bufferout would be equal to or larger than sampleNum due to adding zero when applySTFT.
             double* tempIn = new double[frame + 2];
@@ -366,11 +366,11 @@ namespace DSP
 
         }
 
-        void applyVocoder(std::deque<double>& carrierIn, std::deque<double>& modulatorIn, std::deque<double>& vocoderOut)
+        void applyVocoder(std::vector<double>& carrierIn, std::vector<double>& modulatorIn, std::vector<double>& vocoderOut)
         {
-            std::deque<double> carrierSTFT;
-            std::deque<double> modulatorSTFT;
-            std::deque<double> multipliedSTFT;
+            std::vector<double> carrierSTFT;
+            std::vector<double> modulatorSTFT;
+            std::vector<double> multipliedSTFT;
             applySTFT(carrierIn, carrierSTFT);
             applySTFT(modulatorIn, modulatorSTFT);
             for(int i = 0; i < carrierSTFT.size(); i = i + 2)//complexMultiply
@@ -391,11 +391,11 @@ namespace DSP
             return shift;
         }
 
-        void applyFDL(std::deque<double>& waveIn, std::deque<double>& FDLOut)
+        void applyFDL(std::vector<double>& waveIn, std::vector<double>& FDLOut)
         {
-            //std::deque<double> carrierSTFT;
-            std::deque<double> waveSTFT;
-            std::deque<double> multipliedSTFT;
+            //std::vector<double> carrierSTFT;
+            std::vector<double> waveSTFT;
+            std::vector<double> multipliedSTFT;
             //applySTFT(IRIn, carrierSTFT);
             applySTFT(waveIn, waveSTFT);
             int numFrame = waveSTFT.size() / (frame+2);
@@ -407,9 +407,9 @@ namespace DSP
             applyISTFT(multipliedSTFT, FDLOut);
         }
 
-        void pushToInputDelayLine(std::deque<double>& bufferin)
+        void pushToInputDelayLine(std::vector<double>& bufferin)
         {
-            std::deque<double> tempIn;
+            std::vector<double> tempIn;
             for (int i = 0; i < (frame + 2); i++)
             {
                 tempIn.emplace_back(bufferin[i]);
@@ -419,9 +419,9 @@ namespace DSP
             InputDelayLine.erase(InputDelayLine.begin(), InputDelayLine.begin()+1);
         }
 
-        void calculateComplexMult(std::deque<double>& outputBuffer)
+        void calculateComplexMult(std::vector<double>& outputBuffer)
         {
-            std::deque<double> tempBuffer;
+            std::vector<double> tempBuffer;
             tempBuffer.resize(frame+2, 0.0);
             for(int i = 0; i < IRAfterFFT.size(); i++)
             {
@@ -437,7 +437,7 @@ namespace DSP
             }
         }
 
-        void initIRAfterFFTAndInputDelayLine(std::deque<float> waveTable)
+        void initIRAfterFFTAndInputDelayLine(std::vector<float> waveTable)
         {
             double* tempIn = new double[frame];
             for (int m = 0; m < frame; m++)
@@ -474,7 +474,7 @@ namespace DSP
             delete[] tempOut;
         }
 
-        void reinitIRAndInputDelayLine(std::deque<float> waveTable)
+        void reinitIRAndInputDelayLine(std::vector<float> waveTable)
         {
             IRAfterFFT.clear();
             InputDelayLine.clear();
@@ -491,8 +491,8 @@ namespace DSP
         const int shift = 256;
         STFT mySTFT = STFT(ch,frame,shift);
         STFT tableSTFT = STFT(ch,frame,frame);
-        std::deque<std::deque<double> > IRAfterFFT;
-        std::deque<std::deque<double> > InputDelayLine;
+        std::vector<std::vector<double> > IRAfterFFT;
+        std::vector<std::vector<double> > InputDelayLine;
 
     };
 
